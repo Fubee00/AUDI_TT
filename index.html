@@ -3,27 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFS MW - Semi-Auto HUD</title>
+    <title>NFS MW - Redline Turbo</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; margin: 0; overflow: hidden; touch-action: none; font-family: 'Orbitron', sans-serif; }
-
-        /* SCHALT-BUTTONS */
-        .shift-controls {
-            position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 20px; z-index: 200;
-        }
-        .btn-gear {
-            width: 70px; height: 70px; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #fff; color: white; font-size: 30px;
-            display: flex; justify-content: center; align-items: center; border-radius: 10px;
-        }
+        body { background-color: #000; margin: 0; overflow: hidden; touch-action: none; display: flex; justify-content: center; align-items: center; height: 100vh; }
 
         .hud-container {
-            position: fixed; bottom: 30px; right: 80px; width: 380px; height: 520px;
+            position: relative; 
+            width: 380px; height: 520px;
             display: flex; flex-direction: column; align-items: center;
+            /* Das hier sorgt dafür, dass es auf kleinen Handys schrumpft, statt abzuschneiden */
+            transform: scale(0.85); 
         }
 
+        /* TACHO BEREICH */
         .tacho-box { position: relative; width: 350px; height: 350px; }
         .tacho-bg { width: 100%; height: 100%; position: absolute; z-index: 2; }
         
@@ -50,8 +43,10 @@
         .speedo-digital {
             position: absolute; z-index: 3; bottom: 5%; left: 50%;
             transform: translateX(-50%); color: #ffcc00; text-align: center;
+            font-family: 'Orbitron', sans-serif;
         }
 
+        /* TURBO BEREICH */
         .turbo-unit { position: relative; width: 350px; height: 150px; margin-top: -65px; }
         .turbo-lines { width: 100%; height: auto; position: absolute; z-index: 1; }
         .turbo-needle {
@@ -61,39 +56,35 @@
         }
 
         #nos-btn {
-            position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px;
+            position: fixed; bottom: 40px; left: 40px; width: 80px; height: 80px;
             background: rgba(255, 255, 255, 0.1); border: 2px solid #fff; border-radius: 50%;
-            color: white; display: flex; justify-content: center; align-items: center; z-index: 100;
+            color: white; font-family: 'Orbitron'; display: flex; justify-content: center;
+            align-items: center; z-index: 100; touch-action: none;
         }
     </style>
 </head>
 <body>
-
-<div class="shift-controls">
-    <div class="btn-gear" onclick="shiftGear('up')">+</div>
-    <div class="btn-gear" onclick="shiftGear('down')">-</div>
-</div>
 
 <div id="nos-btn">NOS</div>
 
 <div class="hud-container">
     <div class="tacho-box">
         <div class="redline-container">
-            <img src="1-18-DXT3-nfs_u2_mw-REDLINE_COLOR.png" id="redline-img" class="redline-image">
+            <img src="redline.png" id="redline-img" class="redline-image">
         </div>
         
-        <img src="1-1-DXT3-nfs_u2_mw-8000_LINES_00.png" class="tacho-bg">
+        <img src="tacho_bg.png" class="tacho-bg">
         <div class="speedo-digital">
-            <span id="gear-val" style="font-size: 38px; color: white; display: block;">1</span>
+            <span id="gear-val" style="font-size: 38px; color: white; display: block;">N</span>
             <span id="speed-val" style="font-size: 50px; font-weight: 900; display: block;">000</span>
             <div style="font-size: 14px; color: #fff; opacity: 0.8;">KM/H</div>
         </div>
-        <img src="1-2-P8-nfs_u2_mw-TACH_NEEDLE_00 (1).png" id="needle" class="nadel">
+        <img src="needle.png" id="needle" class="nadel">
     </div>
 
     <div class="turbo-unit">
-        <img src="1-5-DXT3-nfs_u2_mw-TURBO_LINES_00.png" class="turbo-lines">
-        <img src="1-4-P8-nfs_u2_mw-TURBO_NEEDLE_00.png" id="turbo-needle" class="turbo-needle">
+        <img src="turbo_bg.png" class="turbo-lines">
+        <img src="turbo_needle.png" id="turbo-needle" class="turbo-needle">
     </div>
 </div>
 
@@ -104,31 +95,16 @@
     const speedDisplay = document.getElementById('speed-val');
     const gearDisplay = document.getElementById('gear-val');
     const nosBtn = document.getElementById('nos-btn');
-
-    let rpm = 0;
-    let currentGear = 1;
+    
+    let angle = -120;
     let turboCharge = 0; 
     let gas = 0;
-    let realSpeed = 0;
     let isNosActive = false;
     let startY = 0;
-
     const fingerWeg = 1000;      
     const ankerY = "82%";
-    const gearRatios = [0, 40, 80, 120, 160, 200, 240]; // Max Speed pro Gang
 
-    // SCHALT FUNKTION
-    function shiftGear(dir) {
-        if (dir === 'up' && currentGear < 6) {
-            currentGear++;
-            rpm -= 3000; // Drehzahl sackt ab
-        } else if (dir === 'down' && currentGear > 1) {
-            currentGear--;
-            rpm += 2000; // Drehzahl schnellt hoch
-        }
-    }
-
-    nosBtn.addEventListener('touchstart', () => { isNosActive = true; });
+    nosBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isNosActive = true; });
     nosBtn.addEventListener('touchend', () => { isNosActive = false; });
 
     window.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; });
@@ -139,45 +115,36 @@
     window.addEventListener('touchend', () => { gas = 0; });
 
     function update() {
-        // 1. RPM LOGIK
-        let rpmZiel = gas * 8000;
-        let nadelBeschleunigung = (rpmZiel > rpm) ? 0.1 : 0.05;
-        rpm += (rpmZiel - rpm) * nadelBeschleunigung;
+        let ziel = -120 + (gas * 240);
+        let nadelSpeed = (ziel > angle) ? 0.15 : 0.08;
+        angle += (ziel - angle) * nadelSpeed;
 
-        // 2. BEGRENZER JITTER
-        let jitter = 0;
-        if (rpm > 7700) {
-            rpm = 7700 + (Math.random() * 150);
-            jitter = (Math.random() - 0.5) * 12;
-        }
-
-        // 3. GESCHWINDIGKEIT BERECHNEN (Abhängig von Gear & RPM)
-        let speedZiel = (rpm / 8000) * gearRatios[currentGear];
-        if (isNosActive && turboCharge > 0) speedZiel *= 1.3; // NOS Boost
-        realSpeed += (speedZiel - realSpeed) * 0.05;
-
-        // 4. TURBO/REDLINE
         if (isNosActive && turboCharge > 0) {
-            turboCharge -= 1.0; 
-        } else if (gas > 0.9) {
-            turboCharge = Math.min(turboCharge + 0.2, 100); 
+            turboCharge -= 1.2; 
+        } else if (gas > 0.95) {
+            turboCharge = Math.min(turboCharge + 0.3, 100); 
         }
-
-        // 5. VISUALS
-        let angle = -120 + (rpm / 8000) * 240;
-        needle.style.transformOrigin = `50% ${ankerY}`;
-        needle.style.transform = `translate(-50%, -${ankerY}) rotate(${angle + jitter}deg)`;
 
         let fillLevel = 100 - turboCharge;
         redlineImg.style.clipPath = `inset(${fillLevel}% 0 0 0)`;
+        
         if (turboCharge >= 100) redlineImg.classList.add('pulsing-redline');
         else redlineImg.classList.remove('pulsing-redline');
 
-        let turboAngle = 50 + (turboCharge * -1.0);
-        turboNeedle.style.transform = `translate(-50%, 0) rotate(${turboAngle + jitter/2}deg)`;
+        let turboZielAngle = 50 + (turboCharge * -1.0); 
+        let tJitter = (gas > 0.95 && turboCharge > 90) ? (Math.random() - 0.5) * 5 : 0;
 
-        speedDisplay.innerText = Math.floor(realSpeed).toString().padStart(3, '0');
-        gearDisplay.innerText = currentGear;
+        needle.style.transformOrigin = `50% ${ankerY}`;
+        needle.style.transform = `translate(-50%, -${ankerY}) rotate(${angle + tJitter}deg)`;
+        turboNeedle.style.transform = `translate(-50%, 0) rotate(${turboZielAngle + tJitter}deg)`;
+
+        let speed = Math.floor(((angle + 120) / 240) * 221);
+        speedDisplay.innerText = speed.toString().padStart(3, '0');
+        let gears = ["N", "1", "2", "3", "4", "5", "6"];
+        let gIdx = 0;
+        if (speed > 1) gIdx = 1; if (speed > 50) gIdx = 2; if (speed > 90) gIdx = 3;
+        if (speed > 135) gIdx = 4; if (speed > 185) gIdx = 5; if (speed > 215) gIdx = 6;
+        gearDisplay.innerText = gears[gIdx];
 
         requestAnimationFrame(update);
     }
