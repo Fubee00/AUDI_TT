@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NFS MW - Semi-Auto HUD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #000; margin: 0; overflow: hidden; touch-action: none; font-family: 'Orbitron', sans-serif; }
+
+        /* SCHALT-BUTTONS */
+        .shift-controls {
+            position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 20px; z-index: 200;
+        }
+        .btn-gear {
+            width: 70px; height: 70px; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff; color: white; font-size: 30px;
+            display: flex; justify-content: center; align-items: center; border-radius: 10px;
+        }
+
+        .hud-container {
+            position: fixed; bottom: 30px; right: 80px; width: 380px; height: 520px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .tacho-box { position: relative; width: 350px; height: 350px; }
+        .tacho-bg { width: 100%; height: 100%; position: absolute; z-index: 2; }
+        
+        .redline-container {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            z-index: 1; overflow: hidden;
+        }
+        .redline-image {
+            width: 100%; height: 100%;
+            clip-path: inset(100% 0 0 0); 
+            filter: drop-shadow(0 0 10px #ffcc00);
+            transition: clip-path 0.1s linear;
+        }
+        .pulsing-redline { animation: redline-glow 0.5s infinite alternate; }
+        @keyframes redline-glow {
+            from { filter: drop-shadow(0 0 5px #ff3300) brightness(1); }
+            to { filter: drop-shadow(0 0 20px #ff3300) brightness(1.5); }
+        }
+
+        .nadel {
+            position: absolute; height: 52%; top: 50%; left: 50%; z-index: 5;
+            filter: drop-shadow(0 0 8px #fff); will-change: transform;
+        }
+        .speedo-digital {
+            position: absolute; z-index: 3; bottom: 5%; left: 50%;
+            transform: translateX(-50%); color: #ffcc00; text-align: center;
+        }
+
+        .turbo-unit { position: relative; width: 350px; height: 150px; margin-top: -65px; }
+        .turbo-lines { width: 100%; height: auto; position: absolute; z-index: 1; }
+        .turbo-needle {
+            position: absolute; height: 165px; left: 50%; top: -70%; z-index: 10;
+            transform-origin: 50% 5%; will-change: transform;
+            filter: sepia(1) saturate(10) hue-rotate(5deg) drop-shadow(0 0 5px rgba(255, 100, 0, 0.8));
+        }
+
+        #nos-btn {
+            position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px;
+            background: rgba(255, 255, 255, 0.1); border: 2px solid #fff; border-radius: 50%;
+            color: white; display: flex; justify-content: center; align-items: center; z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+<div class="shift-controls">
+    <div class="btn-gear" onclick="shiftGear('up')">+</div>
+    <div class="btn-gear" onclick="shiftGear('down')">-</div>
+</div>
+
+<div id="nos-btn">NOS</div>
+
+<div class="hud-container">
+    <div class="tacho-box">
+        <div class="redline-container">
+            <img src="1-18-DXT3-nfs_u2_mw-REDLINE_COLOR.png" id="redline-img" class="redline-image">
+        </div>
+        
+        <img src="1-1-DXT3-nfs_u2_mw-8000_LINES_00.png" class="tacho-bg">
+        <div class="speedo-digital">
+            <span id="gear-val" style="font-size: 38px; color: white; display: block;">1</span>
+            <span id="speed-val" style="font-size: 50px; font-weight: 900; display: block;">000</span>
+            <div style="font-size: 14px; color: #fff; opacity: 0.8;">KM/H</div>
+        </div>
+        <img src="1-2-P8-nfs_u2_mw-TACH_NEEDLE_00 (1).png" id="needle" class="nadel">
+    </div>
+
+    <div class="turbo-unit">
+        <img src="1-5-DXT3-nfs_u2_mw-TURBO_LINES_00.png" class="turbo-lines">
+        <img src="1-4-P8-nfs_u2_mw-TURBO_NEEDLE_00.png" id="turbo-needle" class="turbo-needle">
+    </div>
+</div>
+
+<script>
+    const needle = document.getElementById('needle');
+    const turboNeedle = document.getElementById('turbo-needle');
+    const redlineImg = document.getElementById('redline-img');
+    const speedDisplay = document.getElementById('speed-val');
+    const gearDisplay = document.getElementById('gear-val');
+    const nosBtn = document.getElementById('nos-btn');
+
+    let rpm = 0;
+    let currentGear = 1;
+    let turboCharge = 0; 
+    let gas = 0;
+    let realSpeed = 0;
+    let isNosActive = false;
+    let startY = 0;
+
+    const fingerWeg = 1000;      
+    const ankerY = "82%";
+    const gearRatios = [0, 40, 80, 120, 160, 200, 240]; // Max Speed pro Gang
+
+    // SCHALT FUNKTION
+    function shiftGear(dir) {
+        if (dir === 'up' && currentGear < 6) {
+            currentGear++;
+            rpm -= 3000; // Drehzahl sackt ab
+        } else if (dir === 'down' && currentGear > 1) {
+            currentGear--;
+            rpm += 2000; // Drehzahl schnellt hoch
+        }
+    }
+
+    nosBtn.addEventListener('touchstart', () => { isNosActive = true; });
+    nosBtn.addEventListener('touchend', () => { isNosActive = false; });
+
+    window.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; });
+    window.addEventListener('touchmove', (e) => {
+        let weg = startY - e.touches[0].clientY;
+        gas = weg > 0 ? Math.min(weg / fingerWeg, 1) : 0;
+    });
+    window.addEventListener('touchend', () => { gas = 0; });
+
+    function update() {
+        // 1. RPM LOGIK
+        let rpmZiel = gas * 8000;
+        let nadelBeschleunigung = (rpmZiel > rpm) ? 0.1 : 0.05;
+        rpm += (rpmZiel - rpm) * nadelBeschleunigung;
+
+        // 2. BEGRENZER JITTER
+        let jitter = 0;
+        if (rpm > 7700) {
+            rpm = 7700 + (Math.random() * 150);
+            jitter = (Math.random() - 0.5) * 12;
+        }
+
+        // 3. GESCHWINDIGKEIT BERECHNEN (Abhängig von Gear & RPM)
+        let speedZiel = (rpm / 8000) * gearRatios[currentGear];
+        if (isNosActive && turboCharge > 0) speedZiel *= 1.3; // NOS Boost
+        realSpeed += (speedZiel - realSpeed) * 0.05;
+
+        // 4. TURBO/REDLINE
+        if (isNosActive && turboCharge > 0) {
+            turboCharge -= 1.0; 
+        } else if (gas > 0.9) {
+            turboCharge = Math.min(turboCharge + 0.2, 100); 
+        }
+
+        // 5. VISUALS
+        let angle = -120 + (rpm / 8000) * 240;
+        needle.style.transformOrigin = `50% ${ankerY}`;
+        needle.style.transform = `translate(-50%, -${ankerY}) rotate(${angle + jitter}deg)`;
+
+        let fillLevel = 100 - turboCharge;
+        redlineImg.style.clipPath = `inset(${fillLevel}% 0 0 0)`;
+        if (turboCharge >= 100) redlineImg.classList.add('pulsing-redline');
+        else redlineImg.classList.remove('pulsing-redline');
+
+        let turboAngle = 50 + (turboCharge * -1.0);
+        turboNeedle.style.transform = `translate(-50%, 0) rotate(${turboAngle + jitter/2}deg)`;
+
+        speedDisplay.innerText = Math.floor(realSpeed).toString().padStart(3, '0');
+        gearDisplay.innerText = currentGear;
+
+        requestAnimationFrame(update);
+    }
+    update();
+</script>
+</body>
+</html>
