@@ -3,41 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFS MW - Semi-Auto HUD</title>
+    <title>NFS MW - Redline Turbo</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; margin: 0; overflow: hidden; touch-action: none; font-family: 'Orbitron', sans-serif; }
-
-        /* SCHALT-BUTTONS */
-        .shift-controls {
-            position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 20px; z-index: 200;
-        }
-        .btn-gear {
-            width: 70px; height: 70px; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #fff; color: white; font-size: 30px;
-            display: flex; justify-content: center; align-items: center; border-radius: 10px;
-        }
+        body { background-color: #000; margin: 0; overflow: hidden; touch-action: none; }
 
         .hud-container {
             position: fixed; bottom: 30px; right: 80px; width: 380px; height: 520px;
             display: flex; flex-direction: column; align-items: center;
         }
 
+        /* TACHO BEREICH */
         .tacho-box { position: relative; width: 350px; height: 350px; }
         .tacho-bg { width: 100%; height: 100%; position: absolute; z-index: 2; }
         
+        /* DAS REDLINE ASSET ALS LADEEFFEKT */
         .redline-container {
             position: absolute; width: 100%; height: 100%; top: 0; left: 0;
-            z-index: 1; overflow: hidden;
+            z-index: 1; /* Hinter dem Haupt-Tacho */
+            overflow: hidden;
         }
         .redline-image {
             width: 100%; height: 100%;
+            /* Wir nutzen einen Clip-Path, um das Bild kreisförmig zu füllen */
             clip-path: inset(100% 0 0 0); 
             filter: drop-shadow(0 0 10px #ffcc00);
             transition: clip-path 0.1s linear;
         }
-        .pulsing-redline { animation: redline-glow 0.5s infinite alternate; }
+        .pulsing-redline {
+            animation: redline-glow 0.5s infinite alternate;
+        }
         @keyframes redline-glow {
             from { filter: drop-shadow(0 0 5px #ff3300) brightness(1); }
             to { filter: drop-shadow(0 0 20px #ff3300) brightness(1.5); }
@@ -50,8 +45,10 @@
         .speedo-digital {
             position: absolute; z-index: 3; bottom: 5%; left: 50%;
             transform: translateX(-50%); color: #ffcc00; text-align: center;
+            font-family: 'Orbitron', sans-serif;
         }
 
+        /* TURBO BEREICH */
         .turbo-unit { position: relative; width: 350px; height: 150px; margin-top: -65px; }
         .turbo-lines { width: 100%; height: auto; position: absolute; z-index: 1; }
         .turbo-needle {
@@ -63,16 +60,12 @@
         #nos-btn {
             position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px;
             background: rgba(255, 255, 255, 0.1); border: 2px solid #fff; border-radius: 50%;
-            color: white; display: flex; justify-content: center; align-items: center; z-index: 100;
+            color: white; font-family: 'Orbitron'; display: flex; justify-content: center;
+            align-items: center; z-index: 100; touch-action: none;
         }
     </style>
 </head>
 <body>
-
-<div class="shift-controls">
-    <div class="btn-gear" onclick="shiftGear('up')">+</div>
-    <div class="btn-gear" onclick="shiftGear('down')">-</div>
-</div>
 
 <div id="nos-btn">NOS</div>
 
@@ -84,7 +77,7 @@
         
         <img src="tacho_bg.png" class="tacho-bg">
         <div class="speedo-digital">
-            <span id="gear-val" style="font-size: 38px; color: white; display: block;">1</span>
+            <span id="gear-val" style="font-size: 38px; color: white; display: block;">N</span>
             <span id="speed-val" style="font-size: 50px; font-weight: 900; display: block;">000</span>
             <div style="font-size: 14px; color: #fff; opacity: 0.8;">KM/H</div>
         </div>
@@ -92,7 +85,7 @@
     </div>
 
     <div class="turbo-unit">
-        <img src="turbo_bg.png" class="turbo-lines">
+        <img src="turb_bg.png" class="turbo-lines">
         <img src="turbo_needle.png" id="turbo-needle" class="turbo-needle">
     </div>
 </div>
@@ -105,7 +98,66 @@
     const gearDisplay = document.getElementById('gear-val');
     const nosBtn = document.getElementById('nos-btn');
 
-    let rpm = 0;
-    let currentGear = 1;
+    let angle = -120;
     let turboCharge = 0; 
     let gas = 0;
+    let isNosActive = false;
+    let startY = 0;
+
+    nosBtn.addEventListener('touchstart', () => { isNosActive = true; });
+    nosBtn.addEventListener('touchend', () => { isNosActive = false; });
+
+    window.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; });
+    window.addEventListener('touchmove', (e) => {
+        let weg = startY - e.touches[0].clientY;
+        gas = weg > 0 ? Math.min(weg / fingerWeg, 1) : 0;
+    });
+    window.addEventListener('touchend', () => { gas = 0; });
+
+    const fingerWeg = 1000;      
+    const ankerY = "82%";
+
+    function update() {
+        // TACHO LOGIK (UNVERÄNDERT)
+        let ziel = -120 + (gas * 240);
+        let nadelSpeed = (ziel > angle) ? 0.15 : 0.08;
+        angle += (ziel - angle) * nadelSpeed;
+
+        // TURBO/REDLINE LOGIK
+        if (isNosActive && turboCharge > 0) {
+            turboCharge -= 1.2; 
+        } else if (gas > 0.95) {
+            turboCharge = Math.min(turboCharge + 0.3, 100); 
+        }
+
+        // REDLINE VISUALISIERUNG
+        // Wir füllen das Asset von unten (100%) nach oben (0%)
+        let fillLevel = 100 - turboCharge;
+        redlineImg.style.clipPath = `inset(${fillLevel}% 0 0 0)`;
+        
+        if (turboCharge >= 100) redlineImg.classList.add('pulsing-redline');
+        else redlineImg.classList.remove('pulsing-redline');
+
+        // TURBO-NADEL LOGIK (UNVERÄNDERT)
+        let turboZielAngle = 50 + (turboCharge * -1.0); 
+        let tJitter = (gas > 0.95 && turboCharge > 90) ? (Math.random() - 0.5) * 5 : 0;
+
+        needle.style.transformOrigin = `50% ${ankerY}`;
+        needle.style.transform = `translate(-50%, -${ankerY}) rotate(${angle + tJitter}deg)`;
+        turboNeedle.style.transform = `translate(-50%, 0) rotate(${turboZielAngle + tJitter}deg)`;
+
+        // GANG LOGIK (UNVERÄNDERT)
+        let speed = Math.floor(((angle + 120) / 240) * 221);
+        speedDisplay.innerText = speed.toString().padStart(3, '0');
+        let gears = ["N", "1", "2", "3", "4", "5", "6"];
+        let gIdx = 0;
+        if (speed > 1) gIdx = 1; if (speed > 50) gIdx = 2; if (speed > 90) gIdx = 3;
+        if (speed > 135) gIdx = 4; if (speed > 185) gIdx = 5; if (speed > 215) gIdx = 6;
+        gearDisplay.innerText = gears[gIdx];
+
+        requestAnimationFrame(update);
+    }
+    update();
+</script>
+</body>
+</html>
