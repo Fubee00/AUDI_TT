@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NFS MW - Mobile Pro V3</title>
+    <title>NFS MW - Mobile Pro V4</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="data:application/manifest+json,{%22display%22:%22standalone%22,%22orientation%22:%22landscape%22}">
+    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     
     <style>
@@ -27,20 +27,33 @@
             overflow: hidden; 
             font-family: 'Orbitron', sans-serif;
             display: flex;
-            align-items: flex-end;
-            justify-content: space-between; /* Tacho links, Buttons rechts */
+            align-items: flex-end; /* Alles nach unten */
+            justify-content: space-between; /* Buttons links, Tacho rechts */
         }
 
-        /* Lenkzone links (40% des Bildschirms) */
-        #steering-zone {
-            position: fixed; left: 0; top: 0;
-            width: 40vw; height: 100vh;
-            z-index: 50;
+        /* BUTTONS LINKS */
+        .controls-left {
+            padding: env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 25px);
+            display: flex; flex-direction: column;
+            gap: 15px; z-index: 200;
         }
 
-        /* Tacho links */
-        .hud-left {
-            padding: env(safe-area-inset-bottom, 10px) env(safe-area-inset-left, 15px);
+        #nos-btn {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 2px solid #0099ff; background: rgba(0, 150, 255, 0.2);
+            display: flex; justify-content: center; align-items: center; 
+            color: white; font-size: 16px; margin-bottom: 10px;
+        }
+
+        .btn-gear {
+            width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff; color: white; font-size: 35px;
+            display: flex; justify-content: center; align-items: center; border-radius: 12px;
+        }
+
+        /* TACHO RECHTS */
+        .hud-right {
+            padding: env(safe-area-inset-bottom, 15px) env(safe-area-inset-right, 20px);
             display: flex; flex-direction: column; align-items: center;
             width: 260px;
             z-index: 100;
@@ -61,26 +74,6 @@
             transform: translateX(-50%); color: #ffcc00; text-align: center;
         }
 
-        /* Buttons rechts */
-        .controls-right {
-            padding: env(safe-area-inset-bottom, 20px) env(safe-area-inset-right, 20px);
-            display: flex; flex-direction: column;
-            gap: 15px; z-index: 200;
-        }
-
-        #nos-btn {
-            width: 80px; height: 80px; border-radius: 50%;
-            border: 2px solid #0099ff; background: rgba(0, 150, 255, 0.2);
-            display: flex; justify-content: center; align-items: center; 
-            color: white; font-size: 16px; margin-bottom: 10px;
-        }
-
-        .btn-gear {
-            width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #fff; color: white; font-size: 35px;
-            display: flex; justify-content: center; align-items: center; border-radius: 12px;
-        }
-
         .turbo-unit { position: relative; width: 200px; height: 80px; margin-top: -35px; z-index: 1; }
         .turbo-bg-img { width: 100%; height: auto; }
         .turbo-needle {
@@ -98,9 +91,14 @@
 <body>
 
     <button id="fs-trigger">FULLSCREEN</button>
-    <div id="steering-zone"></div>
 
-    <div class="hud-left">
+    <div class="controls-left">
+        <div id="nos-btn">NOS</div>
+        <div id="gear-up" class="btn-gear">+</div>
+        <div id="gear-down" class="btn-gear">-</div>
+    </div>
+
+    <div class="hud-right">
         <div class="tacho-box">
             <img src="tacho_bg.png" class="tacho-bg">
             <div class="speedo-digital">
@@ -110,17 +108,10 @@
             </div>
             <img src="needle.png" id="needle" class="nadel">
         </div>
-
         <div class="turbo-unit">
             <img src="turb_bg.png" class="turbo-bg-img">
             <img src="turbo_needle.png" id="turbo-needle" class="turbo-needle">
         </div>
-    </div>
-
-    <div class="controls-right">
-        <div id="nos-btn">NOS</div>
-        <div class="btn-gear" id="gear-up">+</div>
-        <div class="btn-gear" id="gear-down">-</div>
     </div>
 
 <script>
@@ -129,11 +120,10 @@
     const speedDisplay = document.getElementById('speed-val');
     const gearDisplay = document.getElementById('gear-val');
 
-    let rpm = 0, currentGear = 1, turboCharge = 0, gas = 0, realSpeed = 0, lenkung = 0;
+    let rpm = 0, currentGear = 1, turboCharge = 0, gas = 0, realSpeed = 0;
     let isNosActive = false;
     const gearRatios = [0, 50, 95, 140, 190, 245, 320];
 
-    // Multitouch Tracker
     let activeTouches = {};
 
     window.addEventListener('touchstart', (e) => {
@@ -141,18 +131,22 @@
             let t = e.changedTouches[i];
             let target = t.target;
 
-            // Links: Lenken
-            if (t.clientX < window.innerWidth * 0.4) {
-                activeTouches[t.identifier] = { type: 'steer', startX: t.clientX };
-            } 
-            // Rechts: Gas & Buttons
+            // Logik für Multitouch
+            if (target.id === 'gear-up') { 
+                shiftGear('up'); 
+                activeTouches[t.identifier] = 'btn'; 
+            }
+            else if (target.id === 'gear-down') { 
+                shiftGear('down'); 
+                activeTouches[t.identifier] = 'btn'; 
+            }
+            else if (target.id === 'nos-btn') { 
+                isNosActive = true; 
+                activeTouches[t.identifier] = 'nos'; 
+            }
             else {
-                if (target.id === 'gear-up') { shiftGear('up'); activeTouches[t.identifier] = 'btn'; }
-                else if (target.id === 'gear-down') { shiftGear('down'); activeTouches[t.identifier] = 'btn'; }
-                else if (target.id === 'nos-btn') { isNosActive = true; activeTouches[t.identifier] = 'nos'; }
-                else {
-                    activeTouches[t.identifier] = { type: 'gas', startY: t.clientY };
-                }
+                // Wenn kein Button getroffen wurde: Gas geben (überall sonst auf dem Screen)
+                activeTouches[t.identifier] = { type: 'gas', startY: t.clientY };
             }
         }
     }, {passive: false});
@@ -167,10 +161,6 @@
                 let weg = data.startY - t.clientY;
                 gas = weg > 0 ? Math.min(weg / 200, 1) : 0;
             }
-            if (data && data.type === 'steer') {
-                let diffX = t.clientX - data.startX;
-                lenkung = Math.max(-1, Math.min(1, diffX / 100)); 
-            }
         }
     }, {passive: false});
 
@@ -180,7 +170,6 @@
             let data = activeTouches[t.identifier];
             if (data === 'nos') isNosActive = false;
             if (data && data.type === 'gas') gas = 0;
-            if (data && data.type === 'steer') lenkung = 0;
             delete activeTouches[t.identifier];
         }
     });
