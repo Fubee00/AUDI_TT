@@ -3,10 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NFS MW - Mobile Final</title>
+    <title>NFS MW - Mini HUD Mobile</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+        /* Verhindert Scrollen und Zoomen - Wichtig für Mobile */
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            touch-action: none !important; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
         
         body { 
             background-color: #000; margin: 0; padding: 0;
@@ -15,83 +22,81 @@
             display: flex; align-items: flex-end; justify-content: space-between;
         }
 
-        /* Container für die linke Seite (NOS + Gänge) */
+        /* Links: NOS und Schaltung */
         .left-side {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: center;
+            padding: 15px;
+            display: flex; flex-direction: column; gap: 15px; align-items: center;
+            z-index: 100;
         }
 
         #nos-btn {
-            width: 80px; height: 80px; border-radius: 50%;
-            border: 3px solid #0099ff; background: rgba(0, 150, 255, 0.2);
-            display: flex; justify-content: center; align-items: center; color: white;
-            font-size: 18px; font-weight: bold;
+            width: 65px; height: 65px; border-radius: 50%;
+            border: 2px solid #0099ff; background: rgba(0, 150, 255, 0.2);
+            display: flex; justify-content: center; align-items: center; 
+            color: white; font-size: 14px; font-weight: bold;
         }
 
-        .gear-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+        .gear-buttons { display: flex; flex-direction: column; gap: 10px; }
 
         .btn-gear {
-            width: 70px; height: 70px; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #fff; color: white; font-size: 35px;
-            display: flex; justify-content: center; align-items: center; border-radius: 12px;
+            width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff; color: white; font-size: 30px;
+            display: flex; justify-content: center; align-items: center; border-radius: 10px;
         }
 
-        /* Container für die rechte Seite (Tacho + Turbo) */
+        /* Rechts: Der kompakte Tacho */
         .right-side {
-            position: relative;
-            width: 300px; /* Begrenzt die Gesamtbreite am Handy */
-            height: 380px;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
+            position: relative; 
+            width: 210px; 
+            height: 300px;
+            margin-right: 10px; margin-bottom: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            z-index: 100;
         }
 
         .tacho-box { 
             position: relative; 
-            width: 280px; 
-            height: 280px; 
+            width: 195px; 
+            height: 195px; 
         }
 
-        .tacho-bg { width: 100%; height: 100%; object-fit: contain; }
+        .tacho-bg { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
         
         .nadel {
             position: absolute; height: 50%; top: 50%; left: 50%;
             transform-origin: 50% 82%;
             transform: translate(-50%, -82%) rotate(-120deg);
-            will-change: transform;
+            will-change: transform; pointer-events: none;
+            z-index: 5;
         }
 
         .speedo-digital {
             position: absolute; z-index: 10; bottom: 15%; left: 50%;
             transform: translateX(-50%); color: #ffcc00; text-align: center;
+            pointer-events: none;
         }
 
+        /* Turbo unter dem Tacho */
         .turbo-unit { 
             position: relative; 
-            width: 240px; 
-            height: 100px; 
-            margin-top: -50px; /* Zieht den Turbo unter/in den Tacho */
+            width: 170px; 
+            height: 70px; 
+            margin-top: -35px; 
+            pointer-events: none;
         }
         .turbo-bg-img { width: 100%; height: auto; }
         .turbo-needle {
-            position: absolute; height: 130px; left: 50%; top: -65%;
+            position: absolute; 
+            height: 95px; 
+            left: 50%; top: -48px; 
             transform-origin: 50% 5%;
+            will-change: transform;
         }
 
-        /* Skalierung für ganz kleine Handys */
-        @media (max-width: 650px) {
-            .right-side { transform: scale(0.8); transform-origin: bottom right; }
-            .left-side { transform: scale(0.8); transform-origin: bottom left; }
+        /* Skalierung für sehr schmale Displays */
+        @media (max-width: 600px) {
+            .right-side { transform: scale(0.85); transform-origin: bottom right; }
+            .left-side { transform: scale(0.85); transform-origin: bottom left; }
         }
     </style>
 </head>
@@ -100,8 +105,8 @@
     <div class="left-side">
         <div id="nos-btn">NOS</div>
         <div class="gear-buttons">
-            <div class="btn-gear" onclick="shiftGear('up')">+</div>
-            <div class="btn-gear" onclick="shiftGear('down')">-</div>
+            <div class="btn-gear" id="gear-up">+</div>
+            <div class="btn-gear" id="gear-down">-</div>
         </div>
     </div>
 
@@ -109,9 +114,9 @@
         <div class="tacho-box">
             <img src="tacho_bg.png" class="tacho-bg">
             <div class="speedo-digital">
-                <span id="gear-val" style="font-size: 32px; color: white; display: block;">1</span>
-                <span id="speed-val" style="font-size: 40px; font-weight: 900; display: block; color: #ffcc00;">000</span>
-                <div style="font-size: 12px; color: #fff;">KM/H</div>
+                <span id="gear-val" style="font-size: 24px; color: white; display: block;">1</span>
+                <span id="speed-val" style="font-size: 32px; font-weight: 900; display: block; color: #ffcc00;">000</span>
+                <div style="font-size: 10px; color: #fff;">KM/H</div>
             </div>
             <img src="needle.png" id="needle" class="nadel">
         </div>
@@ -123,8 +128,64 @@
     </div>
 
 <script>
-    // JS bleibt gleich wie im letzten Post, aber achte auf:
-    // needle.style.transform = `translate(-50%, -82%) rotate(${angle}deg)`;
+    const needle = document.getElementById('needle');
+    const turboNeedle = document.getElementById('turbo-needle');
+    const speedDisplay = document.getElementById('speed-val');
+    const gearDisplay = document.getElementById('gear-val');
+    const nosBtn = document.getElementById('nos-btn');
+
+    let rpm = 0, currentGear = 1, turboCharge = 0, gas = 0, realSpeed = 0;
+    let isNosActive = false, startY = 0;
+    const gearRatios = [0, 50, 95, 140, 190, 250, 340];
+
+    // Brave-Safe Event Listener ohne "onclick" im HTML
+    document.getElementById('gear-up').addEventListener('touchstart', (e) => { e.preventDefault(); shiftGear('up'); });
+    document.getElementById('gear-down').addEventListener('touchstart', (e) => { e.preventDefault(); shiftGear('down'); });
+    nosBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isNosActive = true; });
+    nosBtn.addEventListener('touchend', () => { isNosActive = false; });
+
+    function shiftGear(dir) {
+        if (dir === 'up' && currentGear < 6) { currentGear++; rpm *= 0.65; }
+        else if (dir === 'down' && currentGear > 1) { currentGear--; rpm = Math.min(rpm * 1.3, 7500); }
+        gearDisplay.innerText = currentGear;
+    }
+
+    // Gas geben durch Wischen
+    window.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: false });
+    window.addEventListener('touchmove', (e) => {
+        if (e.cancelable) e.preventDefault();
+        let weg = startY - e.touches[0].clientY;
+        gas = weg > 0 ? Math.min(weg / 200, 1) : 0;
+    }, { passive: false });
+    window.addEventListener('touchend', () => { gas = 0; });
+
+    function update() {
+        let rpmZiel = gas * 8000;
+        rpm += (rpmZiel - rpm) * 0.1;
+
+        // Begrenzer-Jitter
+        if (rpm > 7750) rpm = 7750 + (Math.random() * 150);
+
+        let speedZiel = (rpm / 8000) * gearRatios[currentGear];
+        if (isNosActive && turboCharge > 0) speedZiel *= 1.3;
+        realSpeed += (speedZiel - realSpeed) * 0.05;
+
+        // Turbo/NOS Management
+        if (isNosActive && turboCharge > 0) turboCharge -= 0.6;
+        else if (gas > 0.8) turboCharge = Math.min(turboCharge + 0.25, 100);
+
+        // Nadel drehen (WICHTIG: translate muss mit rein!)
+        let angle = -120 + (rpm / 8000) * 240;
+        needle.style.transform = `translate(-50%, -82%) rotate(${angle}deg)`;
+
+        // Turbo-Nadel
+        let turboAngle = 50 + (turboCharge * -1.0);
+        turboNeedle.style.transform = `translate(-50%, 0) rotate(${turboAngle}deg)`;
+
+        speedDisplay.innerText = Math.floor(realSpeed).toString().padStart(3, '0');
+        requestAnimationFrame(update);
+    }
+    update();
 </script>
 </body>
 </html>
