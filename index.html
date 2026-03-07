@@ -3,121 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NFS MW - Mobile Final</title>
+    <title>NFS MW - Mobile Pro</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <link rel="manifest" href="data:application/manifest+json,{%22display%22:%22standalone%22,%22orientation%22:%22landscape%22}">
+
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    
     <style>
-        /* Verhindert Scrollen und Zoomen */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent; 
-            touch-action: none !important; 
-            user-select: none;
+            touch-action: none; 
             -webkit-user-select: none;
+            user-select: none;
         }
         
         body { 
-            background-color: #000; margin: 0; padding: 0;
-            width: 100vw; height: 100vh; overflow: hidden;
+            background-color: #000; 
+            margin: 0; 
+            padding: 0;
+            width: 100vw; 
+            height: 100dvh; /* Dynamische Höhe für Mobile */
+            overflow: hidden; 
             font-family: 'Orbitron', sans-serif;
-            display: flex; align-items: flex-end; justify-content: space-between;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
         }
 
-        /* Links: NOS und Schaltung */
-        .left-side {
-            padding: 15px;
-            display: flex; flex-direction: column; gap: 15px; align-items: center;
-            z-index: 100;
+        /* Container für die Steuerung links */
+        .controls-left {
+            padding: env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 200;
         }
 
         #nos-btn {
-            width: 65px; height: 65px; border-radius: 50%;
+            width: 75px; height: 75px; border-radius: 50%;
             border: 2px solid #0099ff; background: rgba(0, 150, 255, 0.2);
             display: flex; justify-content: center; align-items: center; 
-            color: white; font-size: 14px; font-weight: bold;
+            color: white; font-size: 16px; margin-bottom: 10px;
         }
-
-        .gear-buttons { display: flex; flex-direction: column; gap: 10px; }
 
         .btn-gear {
-            width: 60px; height: 60px; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #fff; color: white; font-size: 30px;
-            display: flex; justify-content: center; align-items: center; border-radius: 10px;
+            width: 75px; height: 75px; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff; color: white; font-size: 35px;
+            display: flex; justify-content: center; align-items: center; border-radius: 12px;
         }
 
-        /* Rechts: Der kompakte Tacho */
-        .right-side {
-            position: relative; 
-            width: 210px; 
-            height: 300px;
-            margin-right: 10px; margin-bottom: 10px;
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-            z-index: 100;
+        /* Container für den Tacho rechts */
+        .hud-right {
+            padding: env(safe-area-inset-bottom, 10px) env(safe-area-inset-right, 15px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 260px; /* HUD-Breite fixiert */
         }
 
         .tacho-box { 
             position: relative; 
-            width: 195px; 
-            height: 195px; 
+            width: 220px; 
+            height: 220px; 
         }
 
-        .tacho-bg { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        .tacho-bg { width: 100%; height: 100%; object-fit: contain; position: absolute; z-index: 2; }
         
         .nadel {
-            position: absolute; height: 50%; top: 50%; left: 50%;
+            position: absolute; height: 50%; top: 50%; left: 50%; z-index: 5;
             transform-origin: 50% 82%;
             transform: translate(-50%, -82%) rotate(-120deg);
-            will-change: transform; pointer-events: none;
-            z-index: 5;
-        }
-
-        .speedo-digital {
-            position: absolute; z-index: 10; bottom: 15%; left: 50%;
-            transform: translateX(-50%); color: #ffcc00; text-align: center;
-            pointer-events: none;
-        }
-
-        /* Turbo unter dem Tacho */
-        .turbo-unit { 
-            position: relative; 
-            width: 170px; 
-            height: 70px; 
-            margin-top: -35px; 
-            pointer-events: none;
-        }
-        .turbo-bg-img { width: 100%; height: auto; }
-        .turbo-needle {
-            position: absolute; 
-            height: 95px; 
-            left: 50%; top: -48px; 
-            transform-origin: 50% 5%;
             will-change: transform;
         }
 
-        /* Skalierung für schmale Displays */
-        @media (max-width: 600px) {
-            .right-side { transform: scale(0.85); transform-origin: bottom right; }
-            .left-side { transform: scale(0.85); transform-origin: bottom left; }
+        .speedo-digital {
+            position: absolute; z-index: 10; bottom: 12%; left: 50%;
+            transform: translateX(-50%); color: #ffcc00; text-align: center;
+            width: 100%;
+        }
+
+        .turbo-unit { 
+            position: relative; 
+            width: 200px; 
+            height: 80px; 
+            margin-top: -35px; 
+            z-index: 1;
+        }
+        .turbo-bg-img { width: 100%; height: auto; }
+        .turbo-needle {
+            position: absolute; height: 120px; left: 50%; top: -60%;
+            transform-origin: 50% 5%; z-index: 10;
+        }
+
+        /* Kleiner Fullscreen-Button für Browser ohne Manifest-Support */
+        #fs-trigger {
+            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+            padding: 5px 15px; background: rgba(255,255,255,0.1); color: white;
+            border: 1px solid #fff; border-radius: 5px; font-size: 10px; z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <button id="fs-gui" style="position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:1000; padding:8px 15px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #fff; border-radius:5px; font-family:'Orbitron'; font-size:12px;">FULLSCREEN</button>
 
-    <div class="left-side">
+    <button id="fs-trigger">FULLSCREEN AN / AUS</button>
+
+    <div class="controls-left">
         <div id="nos-btn">NOS</div>
-        <div class="gear-buttons">
-            <div class="btn-gear" id="gear-up">+</div>
-            <div class="btn-gear" id="gear-down">-</div>
-        </div>
+        <div class="btn-gear" onclick="shiftGear('up')">+</div>
+        <div class="btn-gear" onclick="shiftGear('down')">-</div>
     </div>
 
-    <div class="right-side">
+    <div class="hud-right">
         <div class="tacho-box">
             <img src="tacho_bg.png" class="tacho-bg">
             <div class="speedo-digital">
-                <span id="gear-val" style="font-size: 24px; color: white; display: block;">1</span>
-                <span id="speed-val" style="font-size: 32px; font-weight: 900; display: block; color: #ffcc00;">000</span>
-                <div style="font-size: 10px; color: #fff;">KM/H</div>
+                <span id="gear-val" style="font-size: 28px; color: white; display: block;">1</span>
+                <span id="speed-val" style="font-size: 38px; font-weight: 900; display: block;">000</span>
+                <div style="font-size: 10px; color: #fff; opacity: 0.8;">KM/H</div>
             </div>
             <img src="needle.png" id="needle" class="nadel">
         </div>
@@ -129,67 +136,66 @@
     </div>
 
 <script>
-    // --- FULLSCREEN LOGIK ---
-    document.getElementById('fs-gui').addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.log("Fullscreen failed: " + err.message);
-            });
-            document.getElementById('fs-gui').style.display = 'none'; 
-        }
-    });
-
-    // --- HUD LOGIK ---
     const needle = document.getElementById('needle');
     const turboNeedle = document.getElementById('turbo-needle');
     const speedDisplay = document.getElementById('speed-val');
     const gearDisplay = document.getElementById('gear-val');
     const nosBtn = document.getElementById('nos-btn');
+    const fsTrigger = document.getElementById('fs-trigger');
 
     let rpm = 0, currentGear = 1, turboCharge = 0, gas = 0, realSpeed = 0;
     let isNosActive = false, startY = 0;
-    const gearRatios = [0, 50, 95, 140, 190, 250, 340];
+    const gearRatios = [0, 50, 95, 140, 190, 245, 320];
 
-    document.getElementById('gear-up').addEventListener('touchstart', (e) => { e.preventDefault(); shiftGear('up'); });
-    document.getElementById('gear-down').addEventListener('touchstart', (e) => { e.preventDefault(); shiftGear('down'); });
-    nosBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isNosActive = true; });
-    nosBtn.addEventListener('touchend', () => { isNosActive = false; });
+    // Fullscreen-Funktion
+    fsTrigger.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    });
 
     function shiftGear(dir) {
         if (dir === 'up' && currentGear < 6) { currentGear++; rpm *= 0.65; }
-        else if (dir === 'down' && currentGear > 1) { currentGear--; rpm = Math.min(rpm * 1.3, 7500); }
+        else if (dir === 'down' && currentGear > 1) { currentGear--; rpm = Math.min(rpm * 1.35, 7600); }
         gearDisplay.innerText = currentGear;
     }
 
-    window.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: false });
+    nosBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isNosActive = true; });
+    nosBtn.addEventListener('touchend', () => { isNosActive = false; });
+
+    window.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, {passive: false});
     window.addEventListener('touchmove', (e) => {
         if (e.cancelable) e.preventDefault();
         let weg = startY - e.touches[0].clientY;
         gas = weg > 0 ? Math.min(weg / 200, 1) : 0;
-    }, { passive: false });
+    }, {passive: false});
     window.addEventListener('touchend', () => { gas = 0; });
 
     function update() {
         let rpmZiel = gas * 8000;
-        rpm += (rpmZiel - rpm) * 0.1;
+        rpm += (rpmZiel - rpm) * 0.12;
+
+        let jitter = (rpm > 7750) ? (Math.random() - 0.5) * 12 : 0;
         if (rpm > 7750) rpm = 7750 + (Math.random() * 150);
 
         let speedZiel = (rpm / 8000) * gearRatios[currentGear];
-        if (isNosActive && turboCharge > 0) speedZiel *= 1.3;
-        realSpeed += (speedZiel - realSpeed) * 0.05;
+        if (isNosActive && turboCharge > 0) speedZiel *= 1.25;
+        realSpeed += (speedZiel - realSpeed) * 0.06;
 
         if (isNosActive && turboCharge > 0) turboCharge -= 0.6;
-        else if (gas > 0.8) turboCharge = Math.min(turboCharge + 0.25, 100);
+        else if (gas > 0.85) turboCharge = Math.min(turboCharge + 0.25, 100);
 
         let angle = -120 + (rpm / 8000) * 240;
-        needle.style.transform = `translate(-50%, -82%) rotate(${angle}deg)`;
+        needle.style.transform = `translate(-50%, -82%) rotate(${angle + jitter}deg)`;
 
         let turboAngle = 50 + (turboCharge * -1.0);
         turboNeedle.style.transform = `translate(-50%, 0) rotate(${turboAngle}deg)`;
 
         speedDisplay.innerText = Math.floor(realSpeed).toString().padStart(3, '0');
         requestAnimationFrame(update);
-    }
+    } 
     update();
 </script>
 </body>
