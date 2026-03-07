@@ -1,4 +1,3 @@
-        </div>
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -13,138 +12,119 @@
             background-color: #000; margin: 0; padding: 0;
             width: 100vw; height: 100vh; overflow: hidden;
             font-family: 'Orbitron', sans-serif;
+            display: flex; align-items: flex-end; justify-content: space-between;
         }
 
-        /* Schaltung links */
-        .controls-left {
-            position: fixed; left: 20px; bottom: 20px;
-            display: flex; flex-direction: column; gap: 15px; z-index: 200;
+        /* Container für die linke Seite (NOS + Gänge) */
+        .left-side {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
         }
+
+        #nos-btn {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 3px solid #0099ff; background: rgba(0, 150, 255, 0.2);
+            display: flex; justify-content: center; align-items: center; color: white;
+            font-size: 18px; font-weight: bold;
+        }
+
+        .gear-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
         .btn-gear {
             width: 70px; height: 70px; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #fff; color: white; font-size: 30px;
-            display: flex; justify-content: center; align-items: center; border-radius: 10px;
+            border: 2px solid #fff; color: white; font-size: 35px;
+            display: flex; justify-content: center; align-items: center; border-radius: 12px;
         }
 
-        /* NOS über der Schaltung */
-        #nos-btn {
-            position: fixed; left: 20px; bottom: 200px;
-            width: 70px; height: 70px; border-radius: 50%;
-            border: 2px solid #0099ff; background: rgba(0, 150, 255, 0.2);
-            display: flex; justify-content: center; align-items: center; color: white;
+        /* Container für die rechte Seite (Tacho + Turbo) */
+        .right-side {
+            position: relative;
+            width: 300px; /* Begrenzt die Gesamtbreite am Handy */
+            height: 380px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
         }
 
-        /* Tacho rechts - Hier liegt der Hund begraben */
-        .hud-container {
-            position: fixed; bottom: 10px; right: 10px;
-            width: 240px; /* Festgezurrt auf Handy-Breite */
-            display: flex; flex-direction: column; align-items: center;
-            z-index: 100;
+        .tacho-box { 
+            position: relative; 
+            width: 280px; 
+            height: 280px; 
         }
 
-        .tacho-box { position: relative; width: 230px; height: 230px; }
-        .tacho-bg { width: 100%; height: 100%; position: absolute; z-index: 2; }
+        .tacho-bg { width: 100%; height: 100%; object-fit: contain; }
         
         .nadel {
-            position: absolute; height: 50%; top: 50%; left: 50%; z-index: 5;
+            position: absolute; height: 50%; top: 50%; left: 50%;
             transform-origin: 50% 82%;
-            /* Startposition */
             transform: translate(-50%, -82%) rotate(-120deg);
             will-change: transform;
         }
 
         .speedo-digital {
-            position: absolute; z-index: 3; bottom: 10%; left: 50%;
+            position: absolute; z-index: 10; bottom: 15%; left: 50%;
             transform: translateX(-50%); color: #ffcc00; text-align: center;
         }
 
-        .turbo-unit { position: relative; width: 200px; height: 80px; margin-top: -30px; }
-        .turbo-lines { width: 100%; height: auto; position: absolute; z-index: 1; }
+        .turbo-unit { 
+            position: relative; 
+            width: 240px; 
+            height: 100px; 
+            margin-top: -50px; /* Zieht den Turbo unter/in den Tacho */
+        }
+        .turbo-bg-img { width: 100%; height: auto; }
         .turbo-needle {
-            position: absolute; height: 120px; left: 50%; top: -60%; z-index: 10;
-            transform-origin: 50% 5%; will-change: transform;
+            position: absolute; height: 130px; left: 50%; top: -65%;
+            transform-origin: 50% 5%;
+        }
+
+        /* Skalierung für ganz kleine Handys */
+        @media (max-width: 650px) {
+            .right-side { transform: scale(0.8); transform-origin: bottom right; }
+            .left-side { transform: scale(0.8); transform-origin: bottom left; }
         }
     </style>
 </head>
 <body>
 
-<div id="nos-btn">NOS</div>
-
-<div class="controls-left">
-    <div class="btn-gear" onclick="shiftGear('up')">+</div>
-    <div class="btn-gear" onclick="shiftGear('down')">-</div>
-</div>
-
-<div class="hud-container">
-    <div class="tacho-box">
-        <img src="tacho_bg.png" class="tacho-bg">
-        <div class="speedo-digital">
-            <span id="gear-val" style="font-size: 28px; color: white; display: block;">1</span>
-            <span id="speed-val" style="font-size: 36px; font-weight: 900; display: block;">000</span>
-            <div style="font-size: 10px; color: #fff; opacity: 0.8;">KM/H</div>
+    <div class="left-side">
+        <div id="nos-btn">NOS</div>
+        <div class="gear-buttons">
+            <div class="btn-gear" onclick="shiftGear('up')">+</div>
+            <div class="btn-gear" onclick="shiftGear('down')">-</div>
         </div>
-        <img src="needle.png" id="needle" class="nadel">
     </div>
 
-    <div class="turbo-unit">
-        <img src="turb_bg.png" class="turbo-lines">
-        <img src="turbo_needle.png" id="turbo-needle" class="turbo-needle">
+    <div class="right-side">
+        <div class="tacho-box">
+            <img src="tacho_bg.png" class="tacho-bg">
+            <div class="speedo-digital">
+                <span id="gear-val" style="font-size: 32px; color: white; display: block;">1</span>
+                <span id="speed-val" style="font-size: 40px; font-weight: 900; display: block; color: #ffcc00;">000</span>
+                <div style="font-size: 12px; color: #fff;">KM/H</div>
+            </div>
+            <img src="needle.png" id="needle" class="nadel">
+        </div>
+
+        <div class="turbo-unit">
+            <img src="turb_bg.png" class="turbo-bg-img">
+            <img src="turbo_needle.png" id="turbo-needle" class="turbo-needle">
+        </div>
     </div>
-</div>
 
 <script>
-    const needle = document.getElementById('needle');
-    const turboNeedle = document.getElementById('turbo-needle');
-    const speedDisplay = document.getElementById('speed-val');
-    const gearDisplay = document.getElementById('gear-val');
-    const nosBtn = document.getElementById('nos-btn');
-
-    let rpm = 0, currentGear = 1, turboCharge = 0, gas = 0, realSpeed = 0;
-    let isNosActive = false, startY = 0;
-    const gearRatios = [0, 50, 90, 130, 180, 240, 320];
-
-    function shiftGear(dir) {
-        if (dir === 'up' && currentGear < 6) { currentGear++; rpm *= 0.6; }
-        else if (dir === 'down' && currentGear > 1) { currentGear--; rpm = Math.min(rpm * 1.3, 7500); }
-        gearDisplay.innerText = currentGear;
-    }
-
-    nosBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isNosActive = true; });
-    nosBtn.addEventListener('touchend', () => { isNosActive = false; });
-
-    window.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, {passive: false});
-    window.addEventListener('touchmove', (e) => {
-        if (e.cancelable) e.preventDefault();
-        let weg = startY - e.touches[0].clientY;
-        gas = weg > 0 ? Math.min(weg / 250, 1) : 0;
-    }, {passive: false});
-    window.addEventListener('touchend', () => { gas = 0; });
-
-    function update() {
-        let rpmZiel = gas * 8000;
-        rpm += (rpmZiel - rpm) * 0.1;
-
-        let jitter = (rpm > 7700) ? (Math.random() - 0.5) * 10 : 0;
-        if (rpm > 7700) rpm = 7700 + (Math.random() * 150);
-
-        let speedZiel = (rpm / 8000) * gearRatios[currentGear];
-        if (isNosActive && turboCharge > 0) speedZiel *= 1.3;
-        realSpeed += (speedZiel - realSpeed) * 0.05;
-
-        if (isNosActive && turboCharge > 0) turboCharge -= 0.5;
-        else if (gas > 0.8) turboCharge = Math.min(turboCharge + 0.2, 100);
-
-        // DIE NADEL-FORMEL (Wichtig für Mobile!)
-        let angle = -120 + (rpm / 8000) * 240;
-        needle.style.transform = `translate(-50%, -82%) rotate(${angle + jitter}deg)`;
-
-        let turboAngle = 50 + (turboCharge * -1.0);
-        turboNeedle.style.transform = `translate(-50%, 0) rotate(${turboAngle}deg)`;
-
-        speedDisplay.innerText = Math.floor(realSpeed).toString().padStart(3, '0');
-        requestAnimationFrame(update);
-    } 
-    update();
+    // JS bleibt gleich wie im letzten Post, aber achte auf:
+    // needle.style.transform = `translate(-50%, -82%) rotate(${angle}deg)`;
 </script>
 </body>
 </html>
